@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Object Detection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      background-image: url('https://res.cloudinary.com/dltmvmpuz/image/upload/f_auto/c_limit,w_900/eq.com/storage/01HKFFTWPAXKZDBJFMG00QM04T.jpg?_a=BAAAV6DQ');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    /* Add overlay to make content readable */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+    }
+
+    nav {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1a73e8;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 40px;
+      margin-right: 10px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #333;
+      margin-left: 20px;
+      font-weight: 500;
+    }
+
+    .main-content {
+      padding-top: 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .control-button {
+      background: #1a73e8;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      position: relative;
+      z-index: 1;
+    }
+
+    #container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 1;
+      margin-top: 20px;
+    }
+
+    video, canvas {
+      width: 300px;
+      height: 200px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #1a73e8;
+      border-radius: 8px;
+    }
+
+    .results-container {
+      background: rgba(255, 255, 255, 0.9);
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 800px;
+      color: #333;
+      position: relative;
+      z-index: 1;
+    }
+
+    .prediction-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 1.1rem;
+    }
+
+    .prediction-item:last-child {
+      border-bottom: none;
+    }
+
+    .confidence {
+      color: #1a73e8;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container nav-content">
+        <div class="logo">
+            <img src="https://th.bing.com/th/id/R.a487795f740efcf4e8b6ec5abcbc37d4?rik=KBuX%2ffJdt%2b7P8w&riu=http%3a%2f%2fpluspng.com%2fimg-png%2fyolo-png--1000.png&ehk=FzOSe9Q%2bMrJxTUYBUELpaxthnEoHfdYBRD46erl6LKE%3d&risl=&pid=ImgRaw&r=0" alt="YOLO Logo">
+            <span>YOLO Detection</span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="hlo.html">Detection</a>
+        </div>
+    </div>
+</nav>
+
+<div class="main-content">
+  <h1 style="text-align: center; color: white; margin-bottom: 30px;">Improved Object Detection</h1>
+  
+  <!-- Controls -->
+  <button class="control-button" id="startPrediction">Start Prediction</button>
+  <button class="control-button" id="stopWebcam">Stop Webcam</button>
+  
+  <!-- Container for video and canvas -->
+  <div id="container">
+    <video id="webcam" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <!-- Results Container -->
+  <div class="results-container">
+    <h2>Detection Results</h2>
+    <div id="detectionResults"></div>
+  </div>
+</div>
+
+  <script>
+    const video = document.getElementById("webcam");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const startButton = document.getElementById("startPrediction");
+    const stopButton = document.getElementById("stopWebcam");
+
+    let model;
+    let isPredicting = false; // Flag to control prediction
+    let stream; // To hold the webcam stream for stopping
+
+    const detectionResults = document.getElementById("detectionResults");
+    let lastPredictions = [];
+
+    // Initialize the webcam
+    async function startWebcam() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+        };
+      } catch (err) {
+        console.error("Error accessing webcam:", err);
+        alert("Failed to access the webcam. Please check your device permissions.");
+      }
+    }
+
+    // Stop the webcam
+    function stopWebcamStream() {
+      if (stream) {
+        let tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    // Load the COCO-SSD model
+    async function loadModel() {
+      console.log("Loading object detection model...");
+      model = await cocoSsd.load();
+      console.log("Model loaded successfully!");
+    }
+
+    // Perform object detection on the webcam feed
+    async function detectObjects() {
+      if (!isPredicting) return;
+
+      // Match canvas size with video resolution
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Draw video feed on canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Perform object detection
+      const predictions = await model.detect(video);
+
+      // Clear canvas and redraw video feed
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Update predictions list
+      lastPredictions = predictions;
+      updateResultsDisplay(predictions);
+
+      // Draw bounding boxes and labels
+      predictions
+        .filter(prediction => prediction.score > 0.5)
+        .forEach(prediction => {
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(
+            prediction.bbox[0],
+            prediction.bbox[1],
+            prediction.bbox[2],
+            prediction.bbox[3]
+          );
+          ctx.font = "14px Arial";
+          ctx.fillStyle = "red";
+          ctx.fillText(
+            `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
+            prediction.bbox[0],
+            prediction.bbox[1] - 10
+          );
+        });
+
+      requestAnimationFrame(detectObjects); // Continue detection
+    }
+
+    // Function to update results display
+    function updateResultsDisplay(predictions) {
+      const filteredPredictions = predictions.filter(pred => pred.score > 0.5);
+      
+      if (filteredPredictions.length === 0) {
+        detectionResults.innerHTML = '<p>No objects detected</p>';
+        return;
+      }
+
+      const resultsHTML = filteredPredictions
+        .map(pred => `
+          <div class="prediction-item">
+            <span class="object-name">${pred.class}</span>
+            <span class="confidence">${Math.round(pred.score * 100)}% confidence</span>
+          </div>
+        `)
+        .join('');
+
+      detectionResults.innerHTML = resultsHTML;
+    }
+
+    // Start prediction on button click
+    startButton.addEventListener("click", () => {
+      isPredicting = !isPredicting;
+      if (isPredicting) {
+        startButton.textContent = "Stop Prediction";
+        detectObjects();
+      } else {
+        startButton.textContent = "Start Prediction";
+      }
+    });
+
+    // Toggle webcam start/stop
+    stopButton.addEventListener("click", () => {
+      if (video.srcObject) {
+        stopWebcamStream();
+        stopButton.textContent = "Start Webcam";
+        startButton.disabled = true; // Disable prediction when webcam is stopped
+      } else {
+        startWebcam();
+        stopButton.textContent = "Stop Webcam";
+        startButton.disabled = false; // Enable prediction when webcam is restarted
+      }
+    });
+
+    // Initialize the app
+    async function startApp() {
+      await loadModel(); // Load the detection model
+      startWebcam(); // Start the webcam
+    }
+
+    startApp();
+  </script>
+</body>
+</html>

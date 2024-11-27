@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Object Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+        }
+
+        /* Hero section background */
+        #landing-page {
+            background-image: url('https://uploads-ssl.webflow.com/61e7d259b7746e3f63f0b6be/62dff4eba9ae4215e15e4e42_Sans%20titre%20(19).png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+
+        /* Add overlay to make text readable */
+        #landing-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a73e8;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            margin-left: 20px;
+            font-weight: 500;
+        }
+
+        /* Landing Page Styles */
+        #landing-page {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-content {
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+            color: white;
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .cta-button {
+            background: #1a73e8;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #1557b0;
+        }
+
+        /* Prediction Page Styles */
+        #prediction-page {
+            display: none;
+            padding: 2rem;
+        }
+
+        .upload-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .yolo-logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #1a73e8;
+            padding: 2rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        #results {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container nav-content">
+            <div class="logo">
+                <img src="https://th.bing.com/th/id/R.a487795f740efcf4e8b6ec5abcbc37d4?rik=KBuX%2ffJdt%2b7P8w&riu=http%3a%2f%2fpluspng.com%2fimg-png%2fyolo-png--1000.png&ehk=FzOSe9Q%2bMrJxTUYBUELpaxthnEoHfdYBRD46erl6LKE%3d&risl=&pid=ImgRaw&r=0" alt="YOLO Logo">
+                <span>YOLO Detection</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="hlo.html">Detection</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Landing Page -->
+        <div id="landing-page">
+            <div class="hero-content">
+                <h1>Object Detection with YOLO</h1>
+                <p>Detect objects in images with state-of-the-art YOLO technology</p>
+                <a href="hlo.html" class="cta-button">Try it now</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

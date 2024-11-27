@@ -146,6 +146,33 @@
       color: #1a73e8;
       font-weight: bold;
     }
+
+    .camera-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    #switchCamera {
+      background: #4CAF50;
+    }
+
+    #switchCamera:hover {
+      background: #45a049;
+    }
+
+    /* Hide switch camera button by default */
+    #switchCamera {
+      display: none;
+    }
+
+    /* Show switch camera button only if multiple cameras are available */
+    @media (max-width: 768px) {
+      #switchCamera.available {
+        display: inline-block;
+      }
+    }
   </style>
 </head>
 <body>
@@ -166,8 +193,11 @@
   <h1 style="text-align: center; color: white; margin-bottom: 30px;">Improved Object Detection</h1>
   
   <!-- Controls -->
-  <button class="control-button" id="startPrediction">Start Prediction</button>
-  <button class="control-button" id="stopWebcam">Stop Webcam</button>
+  <div class="camera-controls">
+    <button class="control-button" id="startPrediction">Start Prediction</button>
+    <button class="control-button" id="stopWebcam">Stop Webcam</button>
+    <button class="control-button" id="switchCamera">Switch Camera</button>
+  </div>
   
   <!-- Container for video and canvas -->
   <div id="container">
@@ -188,22 +218,44 @@
     const ctx = canvas.getContext("2d");
     const startButton = document.getElementById("startPrediction");
     const stopButton = document.getElementById("stopWebcam");
-
-    let model;
+    const switchButton = document.getElementById("switchCamera");
     let isPredicting = false; // Flag to control prediction
     let stream; // To hold the webcam stream for stopping
+    let currentFacingMode = "user"; // Start with front camera
 
     const detectionResults = document.getElementById("detectionResults");
     let lastPredictions = [];
 
+    // Check if device has multiple cameras
+    async function checkCameraAvailability() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        if (videoDevices.length > 1) {
+          switchButton.classList.add('available');
+        }
+      } catch (err) {
+        console.error("Error checking cameras:", err);
+      }
+    }
+
     // Initialize the webcam
     async function startWebcam() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+        const constraints = {
+          video: {
+            width: 640,
+            height: 480,
+            facingMode: currentFacingMode
+          }
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         video.onloadedmetadata = () => {
           video.play();
         };
+        await checkCameraAvailability();
       } catch (err) {
         console.error("Error accessing webcam:", err);
         alert("Failed to access the webcam. Please check your device permissions.");
@@ -316,6 +368,28 @@
         startButton.disabled = false; // Enable prediction when webcam is restarted
       }
     });
+
+    // Switch camera function
+    async function switchCamera() {
+      // Stop current stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      // Toggle facing mode
+      currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+
+      // Restart webcam with new facing mode
+      await startWebcam();
+
+      // Restart prediction if it was running
+      if (isPredicting) {
+        detectObjects();
+      }
+    }
+
+    // Add switch camera button event listener
+    switchButton.addEventListener("click", switchCamera);
 
     // Initialize the app
     async function startApp() {
